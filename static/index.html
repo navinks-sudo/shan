@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ACTIGEN Portal · Military Registers OCR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg0:#f4f6fb; --bg1:#ffffff; --panel:#ffffff; --panel2:#f1f4fa; --glass:rgba(255,255,255,.82);
+  --line:#e3e8f2; --line2:#cdd6e8; --text:#1a2138; --muted:#66739a; --dim:#93a0c2;
+  --accent:#4f6bff; --accent2:#8b5cff; --mint:#12b886; --amber:#e8912a; --red:#e14b5a;
+  --hi:#12b886; --md:#e8912a; --lo:#e14b5a;
+  --grad:linear-gradient(120deg,#4f6bff,#8b5cff 60%,#12b886);
+  --shadow:0 10px 30px rgba(31,58,140,.08);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;font-family:'Poppins',system-ui,Arial,sans-serif;color:var(--text);
+  background:radial-gradient(1200px 700px at 85% -10%,rgba(139,92,255,.07),transparent 60%),
+             radial-gradient(1000px 600px at -10% 110%,rgba(18,184,134,.06),transparent 55%),var(--bg0);}
+body{display:flex;flex-direction:column;height:100vh;overflow:hidden;font-weight:400}
+::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-thumb{background:var(--line2);border-radius:6px}
+button,select,input{font-family:'Poppins',system-ui,Arial,sans-serif}
+button{cursor:pointer;transition:.16s;border-radius:10px}
+button:disabled{opacity:.45;cursor:not-allowed}
+
+/* ---------- top bar ---------- */
+header{display:flex;align-items:center;gap:14px;padding:12px 20px;background:var(--glass);
+  backdrop-filter:blur(14px);border-bottom:1px solid var(--line);z-index:20;flex-wrap:wrap;box-shadow:var(--shadow)}
+.brand{display:flex;align-items:center;gap:11px}
+.logo{width:36px;height:36px;border-radius:11px;background:var(--grad);display:grid;place-items:center;
+  font-weight:800;color:#fff;box-shadow:0 4px 18px rgba(79,107,255,.35)}
+.brand h1{font-size:15px;margin:0;font-weight:700;letter-spacing:.2px}
+.brand .sub{font-size:11px;color:var(--muted);margin-top:1px;font-weight:400}
+.spacer{flex:1}
+.ctl{display:flex;flex-direction:column;gap:3px}
+.ctl small{font-size:9px;text-transform:uppercase;letter-spacing:.6px;color:var(--dim);padding-left:2px;font-weight:600}
+select,.pill{background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:7px 11px;border-radius:9px;font-size:12.5px}
+.seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{background:transparent;border:0;color:var(--muted);padding:7px 13px;font-size:12.5px;border-radius:0;font-weight:500}
+.seg button.on{background:var(--grad);color:#fff;font-weight:700}
+label.tgl{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:12.5px;cursor:pointer;font-weight:500}
+.btn{padding:9px 15px;border:1px solid var(--line2);background:var(--panel2);color:var(--text);font-size:13px;font-weight:600}
+.btn:hover{border-color:var(--accent)}
+.btn-primary{border:0;background:var(--grad);color:#fff;font-weight:700;font-size:13.5px;
+  padding:10px 20px;box-shadow:0 6px 22px rgba(79,107,255,.28);position:relative}
+.btn-primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 28px rgba(139,92,255,.35)}
+.btn-ghost{background:transparent;border:1px solid var(--line2);color:var(--muted);padding:9px 14px;font-size:13px;font-weight:600}
+.btn-qwen{border:1px solid #8b5cff55;background:linear-gradient(120deg,#f1edff,#eafaf4);color:#5a3fd6;font-weight:700}
+
+/* ---------- directory bar ---------- */
+#dirbar{display:flex;align-items:center;gap:10px;padding:9px 20px;background:var(--panel2);border-bottom:1px solid var(--line)}
+#dirbar .dl{font-size:12px;color:var(--muted);white-space:nowrap;font-weight:600}
+#dirbar input{flex:1;background:#fff;border:1px solid var(--line);color:var(--text);padding:8px 11px;border-radius:9px;font-size:12.5px;font-family:ui-monospace,Consolas,monospace}
+#dirbar input:focus{outline:none;border-color:var(--accent)}
+#dirinfo{font-size:11.5px;color:var(--mint);white-space:nowrap;font-weight:600}
+
+/* ---------- pipeline dashboard ---------- */
+#dash{display:none;padding:14px 20px;background:linear-gradient(180deg,#fff,#f7f9fd);
+  border-bottom:1px solid var(--line);gap:20px;align-items:center;box-shadow:var(--shadow)}
+#dash.show{display:flex;animation:drop .35s ease}
+@keyframes drop{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.ring{position:relative;width:92px;height:92px;flex:none}
+.ring svg{transform:rotate(-90deg)}
+.ring .val{position:absolute;inset:0;display:grid;place-items:center;font-size:19px;font-weight:800}
+.ring .val small{display:block;font-size:9px;color:var(--muted);font-weight:600;margin-top:1px;letter-spacing:.5px}
+.dash-mid{flex:1;min-width:0}
+.dash-line{display:flex;align-items:baseline;gap:10px;margin-bottom:9px;flex-wrap:wrap}
+.dash-line .cur{font-size:13px;color:var(--text);font-family:ui-monospace,Consolas,monospace;font-weight:600}
+.dash-line .st{font-size:12px;color:var(--accent);font-weight:600}
+.dash-line .eta{font-size:12px;color:var(--muted);margin-left:auto}
+.stages{display:flex;gap:6px;flex-wrap:wrap}
+.stg{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:20px;background:var(--panel2);
+  border:1px solid var(--line);font-size:11px;color:var(--dim);transition:.25s;font-weight:500}
+.stg .dot{width:7px;height:7px;border-radius:50%;background:var(--line2)}
+.stg.active{border-color:var(--accent);color:var(--text);box-shadow:0 0 0 3px rgba(79,107,255,.12)}
+.stg.active .dot{background:var(--accent);animation:pulse 1s infinite}
+.stg.done{color:var(--mint);border-color:transparent;background:rgba(18,184,134,.1)}.stg.done .dot{background:var(--mint)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.dash-right{display:flex;gap:8px;flex:none}
+.tally{text-align:center;padding:8px 12px;border-radius:11px;background:var(--panel2);border:1px solid var(--line);min-width:56px}
+.tally b{display:block;font-size:18px;font-weight:800;line-height:1}
+.tally small{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.tally.hi b{color:var(--hi)} .tally.md b{color:var(--md)} .tally.lo b{color:var(--lo)}
+.pbar{height:5px;border-radius:4px;background:var(--panel2);overflow:hidden;margin-top:10px}
+.pbar>i{display:block;height:100%;background:var(--grad);width:0;transition:width .4s}
+
+/* ---------- workspace ---------- */
+main{display:grid;grid-template-columns:264px 1fr 500px;flex:1;min-height:0}
+.col{overflow:auto;min-height:0}
+#list{background:var(--panel);border-right:1px solid var(--line)}
+.list-head{padding:10px 13px;font-size:11px;color:var(--muted);position:sticky;top:0;background:var(--panel);
+  border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;z-index:2;font-weight:600}
+.item{padding:10px 13px;border-bottom:1px solid var(--line);cursor:pointer;display:flex;flex-direction:column;gap:5px}
+.item:hover{background:var(--panel2)}
+.item.active{background:linear-gradient(90deg,rgba(79,107,255,.09),transparent);box-shadow:inset 3px 0 0 var(--accent)}
+.item .nm{font-family:ui-monospace,Consolas,monospace;font-size:10.5px;word-break:break-all;color:var(--text)}
+.badges{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.b{font-size:9px;padding:2px 7px;border-radius:20px;background:var(--panel2);color:var(--dim);border:1px solid var(--line);font-weight:600}
+.b.ok{background:rgba(18,184,134,.12);color:var(--mint);border-color:transparent}
+.b.ev{background:rgba(79,107,255,.12);color:var(--accent);border-color:transparent}
+.b.split{background:rgba(139,92,255,.13);color:#7440e0;border-color:transparent}
+.conf-mini{display:flex;gap:2px;height:4px;border-radius:3px;overflow:hidden;margin-top:2px}
+.conf-mini i{height:100%}
+.item.row-child{padding-left:22px;background:linear-gradient(90deg,rgba(139,92,255,.05),transparent);box-shadow:inset 3px 0 0 rgba(139,92,255,.4)}
+.item.row-parent .nm{color:#7440e0}
+.rn-link{cursor:pointer;text-decoration:underline;text-underline-offset:2px;padding:0 2px;font-weight:700}
+.rn-link.on{background:rgba(139,92,255,.18);border-radius:5px;text-decoration:none}
+
+#viewer{background:#fbfcff;display:flex;flex-direction:column;position:relative}
+.vbar{position:sticky;top:0;display:flex;gap:8px;align-items:center;padding:9px 13px;background:rgba(255,255,255,.9);
+  backdrop-filter:blur(6px);border-bottom:1px solid var(--line);z-index:3}
+.vbar .zb{background:var(--panel2);border:1px solid var(--line);color:var(--text);width:30px;height:30px;border-radius:8px}
+
+/* pipeline stage strip — each stage is a clickable card; image stages swap the viewer */
+#pipeline{display:none;gap:8px;padding:12px 13px;border-bottom:1px solid var(--line);background:#fff;overflow-x:auto}
+#pipeline.show{display:flex}
+.pstage{flex:none;min-width:108px;padding:9px 11px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);
+  cursor:pointer;transition:.15s}
+.pstage:hover{border-color:var(--accent)}
+.pstage.on{border-color:var(--accent);background:linear-gradient(160deg,#eef1ff,#fff);box-shadow:0 4px 14px rgba(79,107,255,.15)}
+.pstage .pn{font-size:10.5px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:5px}
+.pstage .pd{font-size:9.5px;color:var(--muted);margin-top:3px;line-height:1.4}
+.pstage .pi{width:7px;height:7px;border-radius:50%;background:var(--line2);flex:none}
+.pstage.done .pi{background:var(--mint)}
+.pstage.qwen{border-color:#8b5cff44}
+.pstage.qwen.on{background:linear-gradient(160deg,#f4efff,#fff)}
+
+#imgwrap{overflow:auto;flex:1;text-align:center;padding:14px}
+#imgwrap img{max-width:100%;border-radius:10px;box-shadow:0 14px 40px rgba(31,58,140,.14)}
+.hint{color:var(--dim);text-align:center;margin-top:60px;padding:0 30px;line-height:1.8;font-size:13px}
+
+#panel{background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.panel-top{display:flex;gap:8px;align-items:center;padding:11px 13px;border-bottom:1px solid var(--line)}
+.panel-top .run{background:var(--grad);color:#fff;border:0;font-weight:700;padding:9px 16px;font-size:13px;box-shadow:0 4px 16px rgba(79,107,255,.25)}
+.panel-top .mini{background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:8px 11px;font-size:12px;font-weight:600}
+#pstat{font-size:11.5px;color:var(--muted);margin-left:auto;text-align:right;max-width:180px}
+.scoreboard{display:flex;gap:7px;padding:10px 13px;border-bottom:1px solid var(--line)}
+.sc{flex:1;text-align:center;padding:7px;border-radius:10px;background:var(--panel2);border:1px solid var(--line)}
+.sc b{display:block;font-size:16px;font-weight:800} .sc small{font-size:9px;color:var(--muted);letter-spacing:.4px;font-weight:600}
+.sc.hi b{color:var(--hi)} .sc.md b{color:var(--md)} .sc.lo b{color:var(--lo)} .sc.fl b{color:var(--accent)}
+.tabs{display:flex;padding:0 13px;border-bottom:1px solid var(--line);gap:4px}
+.tab{padding:10px 13px;cursor:pointer;font-size:12.5px;color:var(--muted);border-bottom:2px solid transparent;font-weight:600}
+.tab.on{color:var(--text);border-bottom-color:var(--accent)}
+.body{overflow:auto;flex:1;padding:12px 13px}
+textarea#raw,textarea#qwenraw{width:100%;height:100%;min-height:340px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+  color:var(--text);padding:12px;font-family:ui-monospace,Consolas,monospace;font-size:12px;line-height:1.55;white-space:pre-wrap;resize:none}
+.frow{display:flex;align-items:flex-start;gap:9px;padding:6px 4px;border-bottom:1px solid var(--line)}
+.frow .lb{width:120px;flex:none;font-size:11px;color:var(--muted);padding-top:7px;font-weight:500}
+.frow .lb .vk{display:block;font-size:8.5px;color:var(--dim)}
+.fv{flex:1;min-width:0}
+.fv input{width:100%;background:#fff;border:1px solid var(--line);border-radius:8px;color:var(--text);
+  padding:6px 9px 6px 12px;font-size:12.5px}
+.fv input:focus{outline:none;border-color:var(--accent)}
+.fv.hi input{border-left:3px solid var(--hi)} .fv.md input{border-left:3px solid var(--md)} .fv.lo input{border-left:3px solid var(--lo)}
+.meta-line{display:flex;gap:8px;flex-wrap:wrap;margin-top:3px;padding-left:3px}
+.cf{font-size:9px;padding:1px 6px;border-radius:20px;font-weight:700;letter-spacing:.4px}
+.cf.HIGH{background:rgba(18,184,134,.13);color:var(--hi)} .cf.MEDIUM{background:rgba(232,145,42,.13);color:var(--md)}
+.cf.LOW{background:rgba(225,75,90,.13);color:var(--lo)}
+.ev{font-size:10px;color:var(--dim);font-style:italic}
+.alt{font-size:10px;color:var(--md)} .alt b{color:var(--md)}
+.flag{font-size:9px;padding:1px 6px;border-radius:20px;font-weight:700;background:rgba(225,75,90,.13);color:var(--red)}
+.qtag{font-size:9px;padding:1px 6px;border-radius:20px;font-weight:700;background:rgba(139,92,255,.13);color:#7440e0}
+.fv.flagged input{border-left:3px solid var(--red);background:rgba(225,75,90,.04)}
+.sc.fg b{color:var(--red)}
+.changed-tag{font-size:9px;color:var(--accent2);font-weight:600}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#fff;border:1px solid var(--line2);
+  padding:11px 18px;border-radius:12px;font-size:13px;box-shadow:0 10px 40px rgba(31,58,140,.18);z-index:50;display:none;font-weight:500}
+.toast.err{border-color:var(--red);color:var(--red)}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid var(--line2);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.legend{display:flex;gap:12px;font-size:10px;color:var(--muted);padding:7px 13px;border-top:1px solid var(--line);align-items:center;flex-wrap:wrap;font-weight:500}
+.legend i{width:9px;height:9px;border-radius:3px;display:inline-block;margin-right:4px;vertical-align:-1px}
+.qwen-upgrades{font-size:11px;color:var(--muted);padding:8px 0;line-height:1.7}
+.qwen-upgrades b{color:#7440e0}
+.qwen-empty{color:var(--dim);font-size:12.5px;margin-top:20px;text-align:center;line-height:1.7}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo">A</div>
+    <div><h1>ACTIGEN Portal</h1><div class="sub">Aude / Gironde Registers — deskew → CLAHE → vision OCR → consensus → Qwen2.5-VL verify → CI template</div></div>
+  </div>
+  <div class="spacer"></div>
+  <div class="ctl"><small>Accuracy mode</small>
+    <div class="seg" id="mode"><button data-m="accurate" class="on">◎ Accurate</button><button data-m="fast">⚡ Fast</button></div>
+  </div>
+  <div class="ctl"><small>Vision (OCR)</small><select id="vmodel"></select></div>
+  <div class="ctl"><small>Text (fix)</small><select id="tmodel"></select></div>
+  <label class="tgl"><input type="checkbox" id="llm" checked> Grounded fix</label>
+  <label class="tgl" title="Blank out any value not supported by the transcription — off by default: ground-truth testing showed this deletes more correct values than it catches real hallucinations, so review flagged (LOW-confidence) fields yourself instead"><input type="checkbox" id="strict"> Strict anti-hallucination</label>
+  <label class="tgl" title="Independent Qwen2.5-VL read used to verify LOW-confidence fields and shown as a final output"><input type="checkbox" id="qwen" checked> Qwen2.5-VL verify</label>
+  <div class="ctl"><small>Process scope</small>
+    <select id="scope">
+      <option value="all">All images</option>
+      <option value="new">Unprocessed only</option>
+      <option value="Military">Military pages only</option>
+      <option value="Coverpage">Coverpage pages only</option>
+    </select>
+  </div>
+  <button class="btn-primary" id="btnOcr" title="OCR every image into the template">① Process OCR → Excel</button>
+  <button class="btn" id="btnPost" title="Spelling correction + anti-hallucination + Qwen verify on OCR'd records">② Post-process</button>
+  <button class="btn" id="export">⬇ Excel</button>
+</header>
+<div id="dirbar">
+  <span class="dl">📁 Images folder</span>
+  <input id="dirpath" placeholder="Paste a folder path (e.g. C:\Users\you\Downloads\my_images) — leave blank to auto-scan the project">
+  <button class="btn" id="loadDir">Load folder</button>
+  <span id="dirinfo"></span>
+</div>
+
+<!-- LIVE PIPELINE DASHBOARD -->
+<div id="dash">
+  <div class="ring">
+    <svg width="92" height="92"><circle cx="46" cy="46" r="40" stroke="var(--line)" stroke-width="7" fill="none"/>
+      <circle id="ringfg" cx="46" cy="46" r="40" stroke="url(#g)" stroke-width="7" fill="none"
+        stroke-linecap="round" stroke-dasharray="251" stroke-dashoffset="251"/>
+      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#4f6bff"/><stop offset="1" stop-color="#12b886"/></linearGradient></defs></svg>
+    <div class="val"><span id="ringpct">0%</span><small id="ringcount">0/0</small></div>
+  </div>
+  <div class="dash-mid">
+    <div class="dash-line">
+      <span class="cur" id="dcur">—</span><span class="st" id="dstage"></span>
+      <span class="eta" id="deta"></span>
+    </div>
+    <div class="stages" id="dstages"></div>
+    <div class="pbar"><i id="dbar"></i></div>
+  </div>
+  <div class="dash-right">
+    <div class="tally"><b id="tfilled">0</b><small>Fields</small></div>
+    <div class="tally hi"><b id="thi">0</b><small>High</small></div>
+    <div class="tally md"><b id="tmd">0</b><small>Med</small></div>
+    <div class="tally lo"><b id="tlo">0</b><small>Low</small></div>
+    <div class="tally lo"><b id="tfg">0</b><small>⚠ Flag</small></div>
+    <button class="btn-ghost" id="stopBatch" style="align-self:center">■ Stop</button>
+  </div>
+</div>
+
+<main>
+  <div class="col" id="list"><div class="list-head"><span id="listcount">…</span></div></div>
+
+  <div class="col" id="viewer">
+    <div class="vbar">
+      <button class="zb" id="zout">−</button><span id="zlabel" style="font-size:11px;color:var(--muted)">fit</span>
+      <button class="zb" id="zin">+</button><button class="zb" id="zfit" style="width:auto;padding:0 10px;font-size:12px">Fit</button>
+      <div style="flex:1"></div><span id="imgmeta" style="font-size:10.5px;color:var(--dim)"></span>
+    </div>
+    <div id="rowNotice" style="display:none;padding:9px 13px;background:linear-gradient(90deg,rgba(139,92,255,.08),transparent);border-bottom:1px solid var(--line);font-size:12px;color:#7440e0;font-weight:600"></div>
+    <div id="pipeline"></div>
+    <div id="imgwrap"><div class="hint">1. (optional) paste an <b>images folder</b> above → Load.<br>2. hit <b>① Process OCR → Excel</b> to transcribe everything.<br>3. then <b>② Post-process</b> for correction + anti-hallucination + Qwen2.5-VL verify.<br>Or click any image to review it — every stage's output (deskew, CLAHE enhance, OCR) is viewable in the pipeline strip above.</div></div>
+  </div>
+
+  <div class="col" id="panel">
+    <div class="panel-top">
+      <button class="run" id="runone">▶ Run OCR</button>
+      <button class="mini" id="recorrect">↻ Re-fix</button>
+      <button class="mini" id="save">💾 Save</button>
+      <button class="mini" id="splitRows" title="This page has multiple people's records stacked in rows (a ledger/registre-matricule page, not a one-person form) — crop each row into its own image so every person gets extracted, not just one">✂ Split rows</button>
+      <span id="pstat"></span>
+    </div>
+    <div class="scoreboard" id="scoreboard" style="display:none">
+      <div class="sc fl"><b id="scF">0</b><small>FILLED</small></div>
+      <div class="sc hi"><b id="scH">0</b><small>HIGH</small></div>
+      <div class="sc md"><b id="scM">0</b><small>MEDIUM</small></div>
+      <div class="sc lo"><b id="scL">0</b><small>LOW</small></div>
+      <div class="sc fg"><b id="scFG">0</b><small>⚠ FLAG</small></div>
+    </div>
+    <div class="tabs">
+      <div class="tab on" data-t="fields">Template Fields</div>
+      <div class="tab" data-t="raw">Raw OCR</div>
+      <div class="tab" data-t="qwen">Final Output · Qwen2.5-VL</div>
+    </div>
+    <div class="body" id="tab-fields"><div class="hint" style="margin-top:30px">No record yet — Run OCR.</div></div>
+    <div class="body" id="tab-raw" style="display:none"><textarea id="raw" placeholder="Verbatim transcription…"></textarea></div>
+    <div class="body" id="tab-qwen" style="display:none"></div>
+    <div class="legend"><span><i style="background:var(--hi)"></i>High = both readers agree</span>
+      <span><i style="background:var(--md)"></i>Medium = single reader</span>
+      <span><i style="background:var(--lo)"></i>Low = conflict / hard to read</span>
+      <span><i style="background:#8b5cff"></i>Qwen2.5-VL upgraded from LOW</span></div>
+  </div>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+let FIELDS=[], current=null, CURREC=null, zoom=null, poll=null, MODE='accurate', VIEW='original', IMAGES_META=[];
+
+async function jget(u){const r=await fetch(u);if(!r.ok)throw new Error((await r.json().catch(()=>({}))).detail||r.status);return r.json();}
+async function jpost(u,b){const r=await fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b||{})});if(!r.ok)throw new Error((await r.json().catch(()=>({}))).detail||r.status);return r.json();}
+function toast(m,err){const t=$('#toast');t.textContent=m;t.className='toast'+(err?' err':'');t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',err?6000:2600);}
+function pstat(h){$('#pstat').innerHTML=h;}
+
+async function init(){
+  try{
+    const m=await jget('/api/models');
+    m.vision.forEach(n=>$('#vmodel').add(new Option(n,n,false,n===m.default_vision)));
+    if(!$('#vmodel').options.length)m.all.forEach(n=>$('#vmodel').add(new Option(n,n)));
+    m.all.forEach(n=>$('#tmodel').add(new Option(n,n,false,n===m.default_text)));
+    FIELDS=(await jget('/api/fields')).map;
+    if(m.qwen_available===false){$('#qwen').checked=false;$('#qwen').disabled=true;
+      toast(`${m.default_qwen_vision} not pulled yet in Ollama — Qwen verify disabled until you run "ollama pull ${m.default_qwen_vision}"`,true);}
+  }catch(e){toast('Backend/Ollama unreachable: '+e.message,true);}
+  $$('#mode button').forEach(b=>b.onclick=()=>{$$('#mode button').forEach(x=>x.classList.remove('on'));b.classList.add('on');MODE=b.dataset.m;});
+  await refreshList();
+  const s=await jget('/api/batch/status'); if(s.running){startPolling();}
+}
+
+async function refreshList(){
+  const d=await jget('/api/images');
+  IMAGES_META=d.images;
+  if(d.src_dir&&!$('#dirinfo').textContent)$('#dirinfo').textContent=`${d.count} images · ${d.src_dir}`;
+  const el=$('#list'); el.innerHTML=`<div class="list-head"><span>${d.count} images · ${d.folders.length} folder(s)</span><span id="donecount"></span></div>`;
+  let done=0;
+  d.images.forEach(it=>{
+    if(it.processed)done++;
+    const cls=['item'];
+    if(it.name===current)cls.push('active');
+    if(it.row_split)cls.push('row-child');
+    if(it.has_row_splits)cls.push('row-parent');
+    const div=document.createElement('div');div.className=cls.join(' ');
+    div.onclick=()=>selectImage(it.name);
+    const st=it.stats||{};
+    const badges=[`<span class="b ${it.converted?'ok':''}">${it.converted?'PNG':'j2k'}</span>`];
+    if(it.processed)badges.push('<span class="b ok">✓</span>');
+    if(it.event_type)badges.push(`<span class="b ev">${it.event_type}</span>`);
+    if(it.row_split)badges.push(`<span class="b split">✂ row ${it.row_split.index}/${it.row_split.total}</span>`);
+    if(it.has_row_splits)badges.push(`<span class="b split">✂ split ×${d.images.filter(x=>x.row_split&&x.row_split.parent===stem(it.name)).length}</span>`);
+    let mini='';
+    if(it.processed&&st.filled){const tot=st.filled||1;
+      mini=`<div class="conf-mini"><i style="flex:${st.high||0};background:var(--hi)"></i><i style="flex:${st.medium||0};background:var(--md)"></i><i style="flex:${st.low||0};background:var(--lo)"></i><i style="flex:${Math.max(0,tot-(st.high||0)-(st.medium||0)-(st.low||0))};background:var(--line2)"></i></div>`;}
+    div.innerHTML=`<span class="nm">${it.name}</span><span class="badges">${badges.join('')}${st.filled?`<span class="b">${st.filled} fields</span>`:''}</span>${mini}`;
+    el.appendChild(div);
+  });
+  const dc=$('#donecount'); if(dc)dc.textContent=`${done}/${d.count} done`;
+}
+
+async function selectImage(name){
+  current=name;CURREC=null;zoom=null;VIEW='original';
+  $$('.item').forEach(x=>x.classList.toggle('active',x.querySelector('.nm')?.textContent===name));
+  showViewerImage();
+  $('#imgmeta').textContent=name;
+  renderRowNotice(name);
+  try{showRecord(await jget('/api/result/'+encodeURIComponent(name)));}
+  catch{$('#raw').value='';$('#tab-fields').innerHTML='<div class="hint" style="margin-top:30px">Not processed yet — Run OCR.</div>';
+    $('#tab-qwen').innerHTML='<div class="qwen-empty">No Qwen2.5-VL read yet — run OCR + post-process first.</div>';
+    $('#scoreboard').style.display='none';pstat('');buildPipelineStrip(null);}
+}
+function renderRowNotice(name){
+  const box=$('#rowNotice');
+  const meta=IMAGES_META.find(x=>x.name===name);
+  if(!meta){box.style.display='none';return;}
+  if(meta.row_split){
+    const siblings=IMAGES_META.filter(x=>x.row_split&&x.row_split.parent===meta.row_split.parent)
+      .sort((a,b)=>a.row_split.index-b.row_split.index);
+    const links=siblings.map(s=>`<span class="rn-link${s.name===name?' on':''}" data-n="${esc(s.name)}">${s.row_split.index}</span>`).join(' · ');
+    box.innerHTML=`✂ Row ${meta.row_split.index} of ${meta.row_split.total} — split from <span class="rn-link" data-n="${esc(meta.row_split.parent)}">${esc(meta.row_split.parent)}</span> (multi-person ledger page). Rows: ${links}`;
+    box.style.display='block';
+  }else if(meta.has_row_splits){
+    const rows=IMAGES_META.filter(x=>x.row_split&&x.row_split.parent===stem(name)).sort((a,b)=>a.row_split.index-b.row_split.index);
+    const links=rows.map(r=>`<span class="rn-link" data-n="${esc(r.name)}">row ${r.row_split.index}</span>`).join(', ');
+    box.innerHTML=`✂ This page was split into ${rows.length} people — process each row instead of this page: ${links}`;
+    box.style.display='block';
+  }else{
+    box.style.display='none';return;
+  }
+  box.querySelectorAll('.rn-link').forEach(el=>el.onclick=()=>selectImage(el.dataset.n));
+}
+function stem(name){return name.replace(/\.(j2k|jp2|png|jpg|jpeg|tif|tiff|bmp)$/i,'');}
+function showViewerImage(){
+  if(!current)return;
+  const s=stem(current);
+  const suffix=VIEW==='deskewed'?'_deskewed':VIEW==='enhanced'?'_preprocessed':'';
+  $('#imgwrap').innerHTML=`<img id="pageimg" src="/png/${s}${suffix}.png" onload="fitImg()" onerror="this.closest('#imgwrap').innerHTML='<div class=hint>This stage has not run yet for this image — run OCR first.</div>'">`;
+}
+function fitImg(){const i=$('#pageimg');if(!i)return;const w=$('#imgwrap').clientWidth-28;zoom=Math.min(1,w/i.naturalWidth);apply();}
+function apply(){const i=$('#pageimg');if(i&&zoom){i.style.width=(i.naturalWidth*zoom)+'px';$('#zlabel').textContent=Math.round(zoom*100)+'%';}}
+$('#zin').onclick=()=>{zoom=Math.min(5,(zoom||1)*1.25);apply();};
+$('#zout').onclick=()=>{zoom=Math.max(.1,(zoom||1)/1.25);apply();};
+$('#zfit').onclick=fitImg;
+
+/* ---------- pipeline stage strip (per-image, real outputs) ---------- */
+function buildPipelineStrip(rec){
+  const box=$('#pipeline');
+  if(!rec){box.className='';box.innerHTML='';return;}
+  const dsk=rec.deskew||{}, enh=rec.enhance||{}, qwen=rec.qwen||{};
+  const stages=[
+    {key:'original', label:'① Convert', desc:'J2K → PNG source scan', view:true, done:true},
+    {key:'deskewed', label:'② Deskew', desc:dsk.angle!=null?`angle ${dsk.angle}° · ${dsk.method||''}`:'skew check', view:true, done:!!rec.raw_text},
+    {key:'enhanced', label:'③ Enhance', desc:'CLAHE + denoise', view:true, done:!!rec.raw_text},
+    {key:null, label:'④ Transcribe', desc:rec.ocr_model||'vision OCR', view:false, done:!!rec.raw_text},
+    {key:null, label:'⑤ Vision extract', desc:rec.mode==='accurate'?'layout-aware read':'skipped (fast mode)', view:false, done:!!rec.raw_text},
+    {key:null, label:'⑥ Reconcile', desc:'consensus scoring', view:false, done:!!rec.raw_text},
+    {key:null, label:'⑦ Correct + Verify', desc:rec.postprocessed?'grounding checked':'pending', view:false, done:!!rec.postprocessed},
+    {key:'qwen', label:'⑧ Qwen2.5-VL', desc:qwen.skipped?'skipped — already primary reader':qwen.raw_text?`${(qwen.upgraded||[]).length} field(s) upgraded`:(qwen.error?'error':'final verify'), view:false, done:!!(qwen.raw_text||qwen.skipped), qwen:true},
+  ];
+  box.className='show';
+  box.innerHTML=stages.map(s=>`<div class="pstage${s.done?' done':''}${s.key===VIEW?' on':''}${s.qwen?' qwen':''}" data-k="${s.key||''}" data-q="${s.qwen?1:0}">
+      <div class="pn"><span class="pi"></span>${s.label}</div><div class="pd">${s.desc}</div></div>`).join('');
+  $$('.pstage').forEach(el=>el.onclick=()=>{
+    if(el.dataset.q==='1'){$$('.tab').forEach(x=>x.classList.remove('on'));$('.tab[data-t="qwen"]').classList.add('on');
+      $('#tab-fields').style.display='none';$('#tab-raw').style.display='none';$('#tab-qwen').style.display='block';return;}
+    if(!el.dataset.k)return;
+    VIEW=el.dataset.k;showViewerImage();buildPipelineStrip(rec);
+  });
+}
+
+function scoreboard(st){const has=st&&st.filled!=null;$('#scoreboard').style.display=has?'flex':'none';
+  if(has){$('#scF').textContent=st.filled;$('#scH').textContent=st.high||0;$('#scM').textContent=st.medium||0;$('#scL').textContent=st.low||0;$('#scFG').textContent=st.flagged||0;}}
+const FLAGTXT={uncorroborated:'not in transcript',['impossible-day']:'bad day',['day-format']:'day not numeric',['year-out-of-range']:'bad year',['year-format']:'year malformed',['before-birth']:'before birth',['height-implausible']:'bad height',['height-format']:'height fmt'};
+
+function renderFields(rec){
+  const raw=rec.fields_raw||{}, corr=rec.fields_corrected||{}, meta=rec.meta||{};
+  const changed=new Set((rec.diffs||[]).filter(d=>d.field!=='_error').map(d=>d.field));
+  const box=$('#tab-fields');box.innerHTML='';
+  FIELDS.forEach(f=>{
+    const lb=f.label, cv=corr[lb]||'', m=meta[lb]||{}, conf=(m.confidence||'').toUpperCase();
+    const flags=m.flags||[];
+    const cls=(conf==='HIGH'?'hi':conf==='MEDIUM'?'md':conf==='LOW'?'lo':'')+(flags.length?' flagged':'');
+    const row=document.createElement('div');row.className='frow';
+    let ml='';
+    if(conf)ml+=`<span class="cf ${conf}">${conf}</span>`;
+    flags.forEach(fl=>ml+=`<span class="flag" title="${esc(fl)}">⚠ ${FLAGTXT[fl]||fl}</span>`);
+    if((m.source||'').includes('qwen'))ml+=`<span class="qtag">✓ Qwen2.5-VL</span>`;
+    if(m.source==='conflict'&&m.alt)ml+=`<span class="alt">alt: <b>${esc(m.alt)}</b></span>`;
+    if(changed.has(lb)){const d=(rec.diffs||[]).find(x=>x.field===lb);ml+=`<span class="changed-tag">fixed ← ${esc(d?d.original:'')}</span>`;}
+    if(m.evidence)ml+=`<span class="ev">"${esc(m.evidence)}"</span>`;
+    row.innerHTML=`<div class="lb">${lb}${f.vocab?`<span class="vk">${f.vocab}</span>`:''}</div>
+      <div class="fv ${cls}"><input data-lb="${esc(lb)}" value="${esc(cv)}">
+      ${ml?`<div class="meta-line">${ml}</div>`:''}</div>`;
+    box.appendChild(row);
+  });
+}
+function renderQwen(rec){
+  const q=rec.qwen||{}, box=$('#tab-qwen');
+  if(q.skipped){box.innerHTML=`<div class="qwen-empty">Qwen2.5-VL verify skipped — it was already the primary vision reader for this page (<code>${esc(q.model||'qwen2.5vl:7b')}</code>), so a second identical read can't add anything. The Template Fields tab already reflects its transcription.</div>`;return;}
+  if(!q.raw_text&&!q.error){box.innerHTML='<div class="qwen-empty">No Qwen2.5-VL read yet — tick "Qwen2.5-VL verify" and run OCR / post-process.</div>';return;}
+  if(q.error){box.innerHTML=`<div class="qwen-empty">Qwen2.5-VL read failed: ${esc(q.error)}<br><span style="font-size:11px">Make sure the model is pulled: <code>ollama pull ${esc(q.model||'qwen2.5vl:7b')}</code></span></div>`;return;}
+  const up=(q.upgraded||[]);
+  box.innerHTML=`<div style="font-size:11.5px;color:var(--muted);margin-bottom:8px;font-weight:600">Independent read · model <code>${esc(q.model||'')}</code></div>
+    <textarea id="qwenraw" readonly>${esc(q.raw_text||'')}</textarea>
+    <div class="qwen-upgrades">${up.length?`<b>${up.length} field(s)</b> upgraded LOW → MEDIUM after Qwen2.5-VL corroborated the value: ${up.map(esc).join(', ')}`:'No LOW-confidence fields needed Qwen corroboration on this page.'}</div>`;
+}
+function esc(s){return(s==null?'':String(s)).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function collect(){const o={};$$('#tab-fields input').forEach(i=>o[i.dataset.lb]=i.value);return o;}
+
+function showRecord(rec){CURREC=rec;$('#raw').value=rec.raw_text||'';renderFields(rec);renderQwen(rec);scoreboard(rec.stats);
+  pstat(`${rec.ocr_model||''} · ${rec.mode||''}`);buildPipelineStrip(rec);}
+
+$('#runone').onclick=async()=>{
+  if(!current){toast('Select an image first.',true);return;}
+  pstat('<span class="spin"></span> deskew + vision + consensus…');$('#runone').disabled=true;
+  try{const rec=await jpost('/api/ocr',{name:current,vision_model:$('#vmodel').value,text_model:$('#tmodel').value,llm_correct:$('#llm').checked,mode:MODE,strict:$('#strict').checked,use_qwen:$('#qwen').checked});
+    showRecord(rec);await refreshList();$$('.item').forEach(x=>x.classList.toggle('active',x.querySelector('.nm')?.textContent===current));
+    pstat('✓ '+rec.ocr_model);}catch(e){toast('OCR failed: '+e.message,true);pstat('');}
+  $('#runone').disabled=false;
+};
+$('#recorrect').onclick=async()=>{if(!CURREC)return;pstat('<span class="spin"></span> re-fixing…');
+  try{const c=await jpost('/api/correct',{name:current,fields:collect(),llm_correct:$('#llm').checked,text_model:$('#tmodel').value});
+    CURREC.fields_raw=collect();CURREC.fields_corrected=c.corrected;CURREC.diffs=c.diffs;renderFields(CURREC);pstat('✓ fixed');refreshList();}
+  catch(e){toast('Fix failed: '+e.message,true);}};
+$('#save').onclick=async()=>{if(!CURREC)return;try{await jpost('/api/save',{name:current,fields_corrected:collect()});pstat('✓ saved');}catch(e){toast('Save failed: '+e.message,true);}};
+$('#splitRows').onclick=async()=>{
+  if(!current){toast('Select an image first.',true);return;}
+  pstat('<span class="spin"></span> splitting rows…');$('#splitRows').disabled=true;
+  try{const r=await jpost('/api/split-rows',{name:current});
+    toast(`Split into ${r.rows.length} row(s) — they now appear in the image list, each processable on its own.`);
+    await refreshList();pstat(`✓ ${r.rows.length} row(s) created`);}
+  catch(e){toast('Split failed: '+e.message,true);pstat('');}
+  $('#splitRows').disabled=false;
+};
+$('#export').onclick=()=>window.open('/api/export.xlsx?corrected=true','_blank');
+
+/* ---------- batch ---------- */
+function scopeBody(){
+  const sc=$('#scope').value;
+  const body={vision_model:$('#vmodel').value,text_model:$('#tmodel').value,
+    llm_correct:$('#llm').checked,mode:MODE,strict:$('#strict').checked,use_qwen:$('#qwen').checked,only_new:false};
+  if(sc==='new')body.only_new=true;
+  else if(sc==='Military'||sc==='Coverpage')body.doctype=sc;
+  return body;
+}
+async function startBatch(task,label){
+  const body=scopeBody();body.task=task;
+  try{const r=await jpost('/api/batch/start',body);
+    toast(`${label}: ${r.count} image(s) · ${$('#vmodel').value} · ${MODE}${task!=='ocr'&&body.use_qwen?' · qwen-verify':''}${task==='postprocess'&&body.strict?' · strict':''}`);
+    startPolling();}
+  catch(e){toast(label+': '+e.message,true);}
+}
+$('#btnOcr').onclick=()=>startBatch('ocr','OCR → template');
+$('#btnPost').onclick=()=>startBatch('postprocess','Post-processing');
+$('#stopBatch').onclick=async()=>{await jpost('/api/batch/stop',{});toast('Stopping after current image…');};
+
+$('#loadDir').onclick=async()=>{
+  const path=$('#dirpath').value.trim();
+  if(!path){toast('Enter a folder path first, or leave blank to auto-scan.',true);return;}
+  try{const r=await jpost('/api/set-dir',{path});$('#dirinfo').textContent=`✓ ${r.count} images in ${r.dir}`;
+    toast(`Loaded ${r.count} images`);await refreshList();}
+  catch(e){toast('Load folder: '+e.message,true);}
+};
+
+function buildStages(stages){$('#dstages').innerHTML=stages.map(s=>`<div class="stg" data-s="${s}"><span class="dot"></span>${s}</div>`).join('');}
+function setBatchButtons(dis){$('#btnOcr').disabled=dis;$('#btnPost').disabled=dis;}
+function startPolling(){$('#dash').classList.add('show');setBatchButtons(true);clearInterval(poll);
+  poll=setInterval(pollStatus,900);pollStatus();}
+async function pollStatus(){
+  let s;try{s=await jget('/api/batch/status');}catch{return;}
+  if(!$('#dstages').children.length&&s.stages)buildStages(s.stages);
+  const pct=s.pct||0;$('#ringpct').textContent=Math.round(pct)+'%';$('#ringcount').textContent=`${s.done}/${s.total}`;
+  $('#ringfg').style.strokeDashoffset=251-(251*pct/100);
+  $('#dbar').style.width=pct+'%';
+  $('#dcur').textContent=s.current||(s.running?'…':'done');
+  $('#dstage').textContent=s.stage?('› '+s.stage+(s.stage_pct?` ${s.stage_pct}%`:'')):'';
+  $('#deta').textContent=s.eta!=null&&s.running?`ETA ~${fmt(s.eta)}`:(s.running?'':'✓ complete');
+  const t=s.totals||{};$('#tfilled').textContent=t.filled||0;$('#thi').textContent=t.high||0;$('#tmd').textContent=t.medium||0;$('#tlo').textContent=t.low||0;$('#tfg').textContent=t.flagged||0;
+  const order=s.stages||[], ci=order.indexOf(s.stage);
+  $$('#dstages .stg').forEach((el,i)=>{el.classList.toggle('active',i===ci&&s.running);el.classList.toggle('done',ci>=0&&i<ci);});
+  if(s.done!==pollStatus._last){pollStatus._last=s.done;refreshList();}
+  if(!s.running){clearInterval(poll);setBatchButtons(false);
+    $$('#dstages .stg').forEach(el=>el.classList.remove('active'));
+    setTimeout(()=>{if(!$('#dash').matches(':hover'))$('#dash').classList.remove('show');},4000);
+    refreshList();toast('Batch complete ✓');}
+}
+function fmt(s){s=Math.round(s);return s<60?s+'s':Math.floor(s/60)+'m '+(s%60)+'s';}
+
+$$('.tab').forEach(t=>t.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('on'));t.classList.add('on');
+  $('#tab-fields').style.display=t.dataset.t==='fields'?'block':'none';
+  $('#tab-raw').style.display=t.dataset.t==='raw'?'flex':'none';
+  $('#tab-qwen').style.display=t.dataset.t==='qwen'?'block':'none';});
+
+init();
+</script>
+</body>
+</html>
