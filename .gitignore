@@ -4,3 +4,12 @@ __pycache__/
 # Bulk runtime data and downloaded model weights — not source code
 /models/
 /output/
+
+# Model weight/parameter files, wherever they might end up
+*.bin
+*.safetensors
+*.gguf
+*.pt
+*.pth
+*.ckpt
+*.onnx
